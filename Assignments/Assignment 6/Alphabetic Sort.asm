@@ -31,8 +31,7 @@ MAIN PROC
     CMP AL, 'A'
     JL INVALID
     CMP AL, 'Z'
-    JG INVALID
-    
+    JG INVALID    
     
     IF:
     CMP CX, 2   ; CONDITION TO CHECK WHICH BYTE THE CURRENT INPUT WILL BE ASSIGNED TO
@@ -56,36 +55,28 @@ MAIN PROC
     LEA DX, RES
     INT 21H
     CMP BH, BL
-    JL REV      ; BH < BL 
+    JG NORM
     
+    ; INP1 > INP2
+    REV:
+    XCHG BL, BH 
     
     ; INP1 < INP2
     NORM:
     MOV AH, 2
     MOV DL, BL
     INT 21H
-    MOV DL, 20H
+    MOV DL, 20H ; SPACE
     INT 21H
     MOV DL, BH
     INT 21H
     JMP EXIT
-    
-    ; INP1 > INP2
-    REV:
-    MOV AH, 2
-    MOV DL, BH
-    INT 21H
-    MOV DL, 20H
-    INT 21H
-    MOV DL, BL
-    INT 21H
-    JMP EXIT
-    
+        
     INVALID:    ; FOR NON CAPITAL INPUTS
     LEA DX, INV
     MOV AH, 9
     INT 21H
-    JMP INPUT 
+    JMP INPUT
     
     ; DOS EXIT
     EXIT:

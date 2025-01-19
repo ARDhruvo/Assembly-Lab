@@ -23,16 +23,16 @@ MAIN PROC
     MOV BL, AL
     
     ; COMPARISON
-    CMP BL, 'F' ; INP > F
+    CMP BL, 'F' ; IF INP > F
     JG INVALID
     
-    CMP BL, '0' ; INP < 0
+    CMP BL, '0' ; IF INP < 0 && INP > F
     JL INVALID
     
-    CMP BL, 'A' ; INP >= A 
+    CMP BL, 'A' ; IF A <= INP <= F 
     JGE HEX     ; JUMPS TO CONVERSION
     
-    CMP BL, '9' ; INP > 9
+    CMP BL, '9' ; IF INP > 9 && INP < 0 && INP > F
     JG INVALID
     
     ; 0 - 9
