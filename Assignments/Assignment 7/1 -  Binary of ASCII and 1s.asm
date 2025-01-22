@@ -1,0 +1,65 @@
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+INP DB 'ENTER ANY CHARACTER: $'
+BIN DB 0AH, 0DH, 'BINARY EQUIVALENT: $'
+ONN DB 0AH, 0DH, 'NUMBER OF 1S: $'
+
+.CODE
+MAIN PROC
+    ; INITIALIZING DS
+    MOV AX, @DATA
+    MOV DS, AX
+    
+    RESET:      ; CLEARING REGISTERS
+    XOR AX, AX
+    XOR BX, BX
+    XOR CX, CX
+    XOR DX, DX
+    
+    INPUT:
+    LEA DX, INP
+    MOV AH, 9
+    INT 21H
+    
+    MOV AH, 1
+    INT 21H
+    MOV BL, AL
+    
+    OUTPUT:
+    LEA DX, BIN
+    MOV AH, 9
+    INT 21H    
+    
+    MOV AH, 2
+    MOV CX, 8   ; LOOPS 8 TIMES FOR 8 BITS
+    MOV BH, 30H
+    
+    BINARY:   
+    XOR DL, DL  ; CLEARING DL EVERY LOOP   
+    SHL BL, 1
+    JNC NEXT    ; IF 0
+    INC BH      ; USING BH TO KEEP TRACK OF NUMBER OF 1
+    
+    NEXT:
+    RCL DL, 1   ; ROTATES TO GET VALUE STORED IN CF
+    JNC PRINT
+    
+    PRINT:
+    OR DL, 30H  ; SETS 3X ON DL
+    INT 21H
+    LOOP BINARY ; LOOPS UNTIL 8 BIT REPRESENTATION
+    
+    LEA DX, ONN
+    MOV AH, 9
+    INT 21H
+    
+    MOV DL, BH
+    MOV AH, 2   ; PRINTS NUMBER OF 1S
+    INT 21H 
+    
+    EXIT:
+    MOV AH,4CH
+    INT 21H
+    END MAIN

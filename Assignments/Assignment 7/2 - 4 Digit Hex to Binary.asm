@@ -1,0 +1,104 @@
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+INV DB 0AH, 0DH, 'INVALID INPUT', 0AH, 0DH, '$'
+INP DB 'ENTER ANY 4 DIGIT HEX NUMBER: $'
+BIN DB 0AH, 0DH, 'BINARY EQUIVALENT: $'
+CNT DB 0
+
+.CODE
+MAIN PROC
+    ; INITIALIZING DS
+    MOV AX, @DATA
+    MOV DS, AX
+    
+    RESET:      ; CLEARING REGISTERS
+    XOR AX, AX
+    XOR BX, BX
+    XOR CX, CX
+    XOR DX, DX
+    MOV CNT, 0  ; RESETS COUNTER TO 0
+    
+    INPUT:
+    LEA DX, INP
+    MOV AH, 9
+    INT 21H
+    
+    NEXT:
+    MOV AH, 1
+    INT 21H
+    
+    ; COMPARISON
+    CMP AL, 0DH ; IF INP == RETURN
+    JNE COMP    ; IF INP != RETURN -> COMP()
+    CMP CNT, 0  ; IF THERE HASN'T BEEN ANY INPUT YET
+    JE INVALID  ; IF INP == RETURN && CNT == 0 -> INVALID()
+    JMP OUTPUT  ; IF INP == RETURN && CNT != 0 -> OUTPUT() 
+    
+    COMP:
+    CMP AL, '0'
+    JL INVALID  ; IF INP < '0' -> INVALID()
+    
+    CMP AL, '9' 
+    JG COMPAL   ; IF INP < '0' && INP > '9' -> COMPARE FOR A-F
+    
+    JMP STORE   ; ELSE START STORING THE INPUT
+    
+    COMPAL:     ; COMPARING FOR A-F
+    CMP AL, 'F' 
+    JG INVALID  ; IF INP > 'F' -> INVALID()
+    
+    CMP AL, 'A' 
+    JL INVALID  ; IF INP > 'F' && INP < 'A' -> INVALID()
+    
+    ADD AL, 09H ; CONVERTS TO ASCII EQUIVALENT OF 'A' - 'F'
+    
+    STORE:
+    AND AL, 0FH
+    MOV CL, 4
+    SHL AL, CL  ; MULTIPLIES BY 16D OR 10H
+    
+    MOV CX, 4   ; INITIALIZES LOOP
+    
+    SHIFT:
+    SHL AL, 1   ; MOVES AL'S BIT LEFT TO CARRY
+    RCL BX, 1   ; SHIFTS CARRY TO FIRST BIT OF BX
+    
+    LOOP SHIFT
+           
+    INC CNT
+    CMP CNT, 4  ; CHECKS IF 4TH HEX DIGIT IS REACHED
+    JNE NEXT    ; IF NOT 4 IT TAKES THE NEXT BIT
+    
+    OUTPUT:
+    LEA DX, BIN
+    MOV AH, 9
+    INT 21H
+    
+    MOV AH, 2
+    MOV CX, 16  ; LOOPS 16 TIMES FOR 16 BITS
+    
+    BINARY:     
+    XOR DL, DL  ; CLEARING DL EVERY LOOP  
+    SHL BX, 1   
+    RCL DL, 1   ; ROTATES TO GET VALUE STORED IN CF
+    JNC PRINT
+    
+    PRINT:
+    OR DL, 30H  ; SETS 3X ON DL
+    INT 21H
+    LOOP BINARY ; LOOPS UNTIL 16 BIT REPRESENTATION
+        
+    JMP EXIT
+    
+    INVALID:
+    LEA DX, INV
+    MOV AH, 9
+    INT 21H
+    JMP RESET
+
+    EXIT:
+    MOV AH,4CH
+    INT 21H
+    END MAIN
