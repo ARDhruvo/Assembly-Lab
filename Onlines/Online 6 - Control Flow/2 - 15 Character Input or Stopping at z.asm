@@ -1,0 +1,31 @@
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+INP DB 'ENTER CHARACTERS: $'
+
+.CODE
+MAIN PROC
+    ; INITIALIZING DS
+    MOV AX, @DATA
+    MOV DS, AX
+    
+    MOV CX, 0FH
+    
+    NO_OF_INPUT:
+    LEA DX, INP
+    MOV AH, 9
+    INT 21H
+    
+    INPUT:
+    MOV AH, 1
+    INT 21H
+    CMP AL, 'z'
+    JE EXIT 
+    LOOP INPUT
+    
+    ; DOS EXIT
+    EXIT:
+    MOV AH,4CH
+    INT 21H
+    END MAIN

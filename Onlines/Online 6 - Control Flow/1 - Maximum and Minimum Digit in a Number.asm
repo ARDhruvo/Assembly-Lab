@@ -1,0 +1,77 @@
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+INP DB 'ENTER NUMBER OF DIGITS TO ENTER: $'
+IN2 DB 0AH, 0DH, 'ENTER FULL NUMBER: $'
+COM DB 0AH, 0DH, 'MIN AND MAX ARE: $'
+LOP DB ?
+
+.CODE
+MAIN PROC
+    ; INITIALIZING DS
+    MOV AX, @DATA
+    MOV DS, AX
+    
+    MOV CX, 0
+    
+    NO_OF_INPUT:
+    LEA DX, INP
+    MOV AH, 9
+    INT 21H
+    
+    MOV AH, 1
+    INT 21H    
+    SUB AL, 30H
+    MOV CL, AL
+    MOV LOP, AL
+    
+    LEA DX, IN2
+    MOV AH, 9
+    INT 21H
+    
+    INPUT:
+    MOV AH, 1
+    INT 21H
+    CMP CL, LOP
+    JNE END_IF
+    MOV BL, AL
+    MOV BH, AL
+    JMP CONTINUE
+    
+    END_IF:
+    CMP BH, AL
+    JG MAXUPDATE
+    CMP BL, AL
+    JL MINUPDATE
+    JMP CONTINUE
+    
+    MAXUPDATE:
+    MOV BH, AL
+    JMP CONTINUE
+    
+    MINUPDATE:
+    MOV BL, AL
+    JMP CONTINUE
+    
+    
+    CONTINUE:
+    LOOP INPUT
+    
+    LEA DX, COM
+    MOV AH, 9
+    INT 21H
+    
+    MOV DL, BH
+    MOV AH, 2
+    INT 21H
+    MOV DL, ' '
+    INT 21H
+    MOV DL, BL
+    INT 21H
+    
+    ; DOS EXIT
+    EXIT:
+    MOV AH,4CH
+    INT 21H
+    END MAIN
