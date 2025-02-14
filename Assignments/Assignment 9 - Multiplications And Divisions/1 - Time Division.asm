@@ -2,25 +2,20 @@
 .STACK 100H
 
 .DATA
-INV DB 0AH, 0DH, 'INVALID INPUT. PLEASE ENTER DECIMAL DIGITS', 0AH, 0DH, '$'
-INP DB 'ENTER SECONDS: $'
-NEW DB 0AH, 0DH, '$'
+INV DB 0AH, 0DH, 'INVALID INPUT', 0AH, 0DH, 'PLEASE '
+INP DB 'ENTER SECONDS IN THE RANGE 0 - 65535: $'
+NEW DB 0AH, 0DH, '= $'
 HRS DB ' HOURS $'
 MNS DB ' MINUTES $'
 SCS DB ' SECONDS $'
-DIG DW 0 
 TEN DW 10
-CNV DB 60
-COM DB 60
-MIN DW 0   
-SEC DW 0
+REM DW 0
 
 .CODE
 MAIN PROC
     ; INITIALIZING DS
     MOV AX, @DATA
     MOV DS, AX
-    
              
     JMP START
     
@@ -29,6 +24,9 @@ MAIN PROC
     MOV AH, 9
     INT 21H
     
+    CALL RESET
+    
+    JMP INPUT
     
     START:
     
@@ -44,121 +42,98 @@ MAIN PROC
     MOV AH, 1
     INT 21H
     
-    
     COMP:
     
     CMP AL, 0DH
-    JE EVAL
+    JE OUTPUT       ; IF INP == RETURN -> OUTPUT()
     
+    ; CHECKING DECIMAL
     CMP AL, '0'
     JL INVALID
     
     CMP AL, '9'
     JG INVALID
     
-    CALC:
-    XOR CX, CX
-    MOV CL, AL
-    SUB CL, '0'
-    MOV AX, TEN
-    MUL BX
-    ADD AX, CX
-    MOV BX, AX   
+    CALL STORE      ; STORES FULL INPUT IN BX
     
     CMP DL, 0
-    JNE INVALID
+    JNE INVALID     ; IF INP > FFFF -> INVALID()
         
     JMP INPUT
     
-    EVAL:
+    OUTPUT:
     LEA DX, NEW
     MOV AH, 9
     INT 21H
     
-    HOURS:
-    
-    XOR DX, DX
-    
-    MOV AX, BX
-    MOV CX, 3600
-    DIV CX
-    MOV MIN, DX
-    XOR DX, DX
-    
-    DIV TEN
-    MOV CX, DX
-    MOV DX, AX
-    ;XCHG DL, DH
-    OR DL, 30H
-    MOV AH, 2
-    INT 21H
-    MOV DX, CX
-    OR DL, 30H
-    INT 21H
+    ; CX = MODIFIER -> 3600 FOR HOUR, 60 FOR MINUTES, 1 FOR SECONDS
+    MOV CX, 3600    ; FOR CONVERTING SECONDS TO HOUR
+    CALL CONVERT    ; RETURNS* REM = MINUTES
     
     LEA DX, HRS
     MOV AH, 9
     INT 21H
     
-    MINS:
-    
-    XOR DX, DX
-    
-    MOV AX, MIN
-    MOV CX, 60
-    DIV CX
-    MOV SEC, DX
-    XOR DX, DX
-    
-    ;MOV AX, MIN
-    DIV TEN
-    MOV CX, DX
-    MOV DX, AX
-    ;XCHG DL, DH
-    OR DL, 30H
-    MOV AH, 2
-    INT 21H
-    MOV DX, CX
-    OR DL, 30H
-    INT 21H
+    MOV BX, REM     ; REM = MINUTES
+    MOV CX, 60      ; FOR CONVERTING MINUTES TO SECONDS
+    CALL CONVERT    ; RETURNS* REM = SECONDS
     
     LEA DX, MNS
     MOV AH, 9
-    INT 21H 
-    
-    SECS:
-    
-    XOR DX, DX
-    
-    MOV AX, SEC
-    DIV TEN
-    MOV CX, DX
-    MOV DX, AX
-    ;XCHG DL, DH
-    OR DL, 30H
-    MOV AH, 2
     INT 21H
-    MOV DX, CX
-    OR DL, 30H
-    INT 21H
+    
+    MOV BX, REM     ; REM = SECONDS
+    MOV CX, 1       ; FOR CONVERTING SECONDS TO SECONDS
+    CALL CONVERT    ; RETURNS* REM = 0
     
     LEA DX, SCS
     MOV AH, 9
     INT 21H
     
     CALL EXIT
-     
-
     
 ENDP MAIN
 
-RESET PROC
+RESET PROC          ; CLEARS ALL REGISTERS
     XOR AX, AX
     XOR BX, BX
     XOR CX, CX
     XOR DX, DX
     RET
 ENDP RESET
+
+STORE PROC
+    XOR CX, CX
+    MOV CL, AL      ; MOVES THE CURRENT INPUT TO CL
+    SUB CL, '0'     ; ASCII TO DECIMAL
+    MOV AX, TEN
+    MUL BX          ; NUM *= (10 * NUM) 
+    ADD AX, CX      ; NUM += INP
+    MOV BX, AX      ; BX = NUM   
+    RET
+ENDP STORE
+
+; CONVERT(CX = CONVERTING NUMBER)
+CONVERT PROC
+    XOR DX, DX      ; DX NEEDS TO BE CLEARED FOR DIV AND MUL
+    
+    MOV AX, BX      ; DIVIDEND = STORED NUMBER
+    DIV CX          ; DIVISOR = MODIFIER
+    MOV REM, DX     ; RETURNS* REM = REMAINDER
+    XOR DX, DX      ; DX NEEDS TO BE CLEARED FOR DIV AND MUL
+    
+    ; THE HIGHEST TIME PRINTABLE IN FFFF IS TWO DIGITS
+    DIV TEN         ; FOR 10S PLACE
+    MOV CX, DX
+    MOV DX, AX
+    OR DL, 30H
+    MOV AH, 2
+    INT 21H
+    MOV DX, CX      ; FOP 1S PLACE
+    OR DL, 30H
+    INT 21H
+    RET
+ENDP CONVERT
 
 EXIT PROC
     MOV AH,4CH
