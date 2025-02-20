@@ -1,0 +1,67 @@
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+
+.CODE
+MAIN PROC
+    ; INITIALIZING DS
+    MOV AX, @DATA
+    MOV DS, AX
+    
+    CALL RESET
+    
+    MOV AH, 1
+    INT 21H
+    
+    SUB AL, '0'
+    
+    XOR AH, AH
+    MOV CX, AX
+        
+    CALL FACTORIAL
+
+    CALL EXIT
+    
+ENDP MAIN
+
+FACTORIAL PROC
+    MOV AL, 1 
+    FACT:
+    MUL CX
+    DEC CX
+    JNZ FACT
+    
+    MOV BX, AX
+    
+    MOV AH, 2
+    MOV DL, 0DH
+    INT 21H
+    MOV DL, 0AH
+    INT 21H
+     
+    
+    MOV DL, BL
+    OR DL, 30H
+    MOV AH, 2
+    INT 21H
+    RET    
+ENDP FACTORIAL
+
+
+RESET PROC          ; CLEARS ALL REGISTERS
+    XOR AX, AX
+    XOR BX, BX
+    XOR CX, CX
+    XOR DX, DX
+    RET
+ENDP RESET
+
+EXIT PROC
+    MOV AH,4CH
+    INT 21H
+ENDP EXIT
+
+
+END MAIN
+    
