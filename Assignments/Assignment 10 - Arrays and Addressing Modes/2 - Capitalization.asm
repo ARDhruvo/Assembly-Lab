@@ -1,0 +1,72 @@
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+KEY DB 61H DUP(' '), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'   ; MAPPING
+
+INP DB 'ENTER LINE: $'
+CNV DB 0AH, 0DH, 'CONVERTED STRING: $'
+STR DW 100 DUP ('$')
+
+.CODE
+MAIN PROC
+    ; INITIALIZING DS
+    MOV AX, @DATA
+    MOV DS, AX
+    
+    CALL RESET
+    
+    LEA BX, KEY     ; BX NEEDS KEY ADDRESS FOR XLAT
+    LEA DI, STR     ; FOR INDEXED ADDRESSING MODE
+    
+    LEA DX, INP
+    MOV AH, 9
+    INT 21H
+    
+    INPUT:
+    MOV AH, 1
+    INT 21H
+    
+    CMP AL, 0DH
+    JE ENTER        ; IF INP == RETURN -> ENTER()
+    
+    CMP AL, 'a'
+    JL STRING
+    
+    CMP AL, 'z'
+    JG STRING       ; IF (INP < 'a' || INP > 'z') -> STORESTRING()
+    
+    XLAT            ; ELSE: XLAT
+    
+    STRING:
+    XOR AH, AH
+    MOV [DI], AX    ; STRING[I] += AL
+    INC DI          ; I++
+    JMP INPUT
+    
+    ENTER:
+    LEA DX, CNV
+    MOV AH, 9
+    INT 21H
+    
+    LEA DX, STR 
+    MOV AH, 9
+    INT 21H
+    
+    CALL EXIT
+ENDP MAIN
+    
+RESET PROC          ; FOR CLEARING REGISTERS
+    XOR AX, AX
+    XOR BX, BX
+    XOR CX, CX
+    XOR DX, DX
+    RET
+ENDP RESET
+
+EXIT PROC
+    MOV AH, 4CH
+    INT 21H
+ENDP EXIT
+
+END MAIN
