@@ -1,0 +1,70 @@
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+TEN DB 10
+AVG DB 'AVERAGE = $'
+ARR DW 1, 20, 10, 14, 5, 7, 12, 9, 10, 12
+
+.CODE
+MAIN PROC
+    ; INITIALIZING DS
+    MOV AX, @DATA
+    MOV DS, AX
+    
+    CALL RESET
+    
+    LEA DX, AVG
+    MOV AH, 9
+    INT 21H
+    LEA DI, ARR
+    
+    
+    XOR AX, AX
+    XOR DX, DX
+    MOV CX, 10
+    CALL SUM
+    
+    ;MOV AX, DX
+    ;XOR DX, DX
+    DIV TEN
+    
+    
+    CALL OUTDEC
+    
+
+    CALL EXIT
+    
+ENDP MAIN
+
+RESET PROC          ; CLEARS ALL REGISTERS
+    XOR AX, AX
+    XOR BX, BX
+    XOR CX, CX
+    XOR DX, DX
+    RET
+ENDP RESET
+
+SUM PROC
+    XOR AX, AX
+    SUMMATION:
+    XOR DX, DX
+    XOR BX, BX
+    
+    MOV BL, [DI]
+    ADD AX, BX
+    
+    ADD DI, 2
+    LOOP SUMMATION
+    RET
+ENDP SUM
+
+EXIT PROC
+    MOV AH,4CH
+    INT 21H
+ENDP EXIT
+
+INCLUDE OUTDEC.ASM
+
+END MAIN
+    
